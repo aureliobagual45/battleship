@@ -54,8 +54,9 @@ public class ComputerAI
 
         do
         {
-            x = random.nextInt(10);
-            y = random.nextInt(10);
+            int size = board.getSize();
+            x = random.nextInt(size);
+            y = random.nextInt(size);
             result = board.attack(x, y);
         }
         while (result == AttackResult.ALREADY_TRIED);
@@ -94,7 +95,7 @@ public class ComputerAI
             int newX = firstHitX + dx;
             int newY = firstHitY + dy;
 
-            if (!isValid(newX, newY))
+            if (!isValid(board, newX, newY))
                 continue;
 
             AttackResult result = board.attack(newX, newY);
@@ -127,7 +128,7 @@ public class ComputerAI
             int newX = lastHitX + directionX;
             int newY = lastHitY + directionY;
 
-            if (!isValid(newX, newY))
+            if (!isValid(board, newX, newY))
             {
                 chooseRandomSide();
                 attempts++;
@@ -176,9 +177,10 @@ public class ComputerAI
         lastHitY = firstHitY;
     }
 
-    private boolean isValid(int x, int y)
+    private boolean isValid(Board board, int x, int y)
     {
-        return x >= 0 && x < 10 && y >= 0 && y < 10;
+        int size = board.getSize();
+        return x >= 0 && x < size && y >= 0 && y < size;
     }
 
     private void resetState()

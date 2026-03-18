@@ -77,7 +77,7 @@ public class Game
 
         do
         {
-            int[] pos = ui.getAttackCoordinates();
+            int[] pos = ui.getAttackCoordinates(computerBoard.getSize());
             x = pos[0];
             y = pos[1];
 

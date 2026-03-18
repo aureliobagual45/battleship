@@ -32,6 +32,7 @@ public class GameUI
         do
         {
             choice = scanner.nextInt();
+            scanner.nextLine();
         } while (choice != 1 && choice != 2);
 
         return choice;
@@ -49,6 +50,7 @@ public class GameUI
         {
             System.out.print("Direction (H/V): ");
             dir = scanner.next().toUpperCase().charAt(0);
+            scanner.nextLine();
         } while (dir != 'H' && dir != 'V');
 
         dx = (dir == 'H') ? 1 : 0;
@@ -56,9 +58,11 @@ public class GameUI
 
         System.out.print("X: ");
         int x = scanner.nextInt();
+        scanner.nextLine();
 
         System.out.print("Y: ");
         int y = scanner.nextInt();
+        scanner.nextLine();
 
         return new Ship(x, y, dx, dy);
     }
@@ -99,19 +103,75 @@ public class GameUI
         user.print();
     }
 
-    public int[] getAttackCoordinates()
+    public int[] getAttackCoordinates(int size)
     {
-        System.out.println("\nSend your attack:");
-        System.out.print("X: ");
-        int x = scanner.nextInt();
-        System.out.print("Y: ");
-        int y = scanner.nextInt();
+        int x, y;
+
+        while (true)
+        {
+            System.out.println("\nSend your attack:");
+
+            String input = scanner.nextLine().trim().toUpperCase();
+
+            if (input.length() < 2)
+            {
+                System.out.println("Coordinates too short! Use A0 to J9");
+                continue;
+            }
+
+            char letter = input.charAt(0);
+            String number = input.substring(1);
+
+            if (!Character.isLetter(letter))
+            {
+                System.out.println("First coordinate is not a letter! Use A0 to J9");
+                continue;
+            }
+
+            boolean validNumber = true;
+
+            for (char c : number.toCharArray())
+            {
+                if (!Character.isDigit(c))
+                {
+                    validNumber = false;
+                    break;
+                }
+            }
+
+            if (!validNumber)
+            {
+                System.out.println("Second coordinate is not a number! Use A0 to J9");
+                continue;
+            }
+
+            x = letter - 'A';
+
+            try
+            {
+                y = Integer.parseInt(number);
+            }
+            catch (NumberFormatException e)
+            {
+                System.out.println("Number too large! Use A0 to J9");
+                continue;
+            }
+
+            if (x < 0 || x >= size || y < 0 || y >= size)
+            {
+                System.out.println("Out of bounds! Use A0 to J9");
+                continue;
+            }
+
+            break;
+        }
+
         return new int[]{x, y};
     }
 
     public void showPlayerAttackResult(int x, int y, AttackResult result)
     {
-        System.out.println("\nYou fired at (" + x + ", " + y + ")");
+        System.out.println("\nYou fired at (" + (char)('A' + x) + ", " + y + ")");
 
         switch (result)
         {

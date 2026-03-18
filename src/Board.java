@@ -4,22 +4,32 @@ public class Board
 {
     private List<Integer> shipsAlive;
     private final int size;
-    private final char[][] grid;
+    private final Cell[][] grid;
     private static final int MAX_TRIES = 50;
     private static final int[] SHIPS = {4, 3, 3, 2, 2, 2, 1, 1, 1, 1};
 
     public Board(int size)
     {
         this.size = size;
-        this.grid = new char[size][size];
+        this.grid = new Cell[size][size];
+        shipsAlive = new ArrayList<>();
+
+        for (int s : SHIPS)
+            shipsAlive.add(s);
+
         clear();
+    }
+
+    public int getSize()
+    {
+        return size;
     }
 
     public void clear()
     {
         for (int y = 0; y < size; y++)
             for (int x = 0; x < size; x++)
-                grid[y][x] = '·';
+                grid[y][x] = Cell.EMPTY;
     }
 
     /// PLACEMENT
@@ -45,11 +55,6 @@ public class Board
 
     public void placeShipsRandom()
     {
-        shipsAlive = new ArrayList<>();
-
-        for (int size : SHIPS)
-            shipsAlive.add(size);
-
         Random random = new Random();
 
         while (!tryPlaceAllShips(random))
@@ -117,7 +122,7 @@ public class Board
 
             if (!inside(x, y)) return false;
 
-            if (grid[y][x] != '·') return false;
+            if (grid[y][x] != Cell.EMPTY) return false;
         }
         return true;
     }
@@ -137,7 +142,7 @@ public class Board
                     int y = cy + ay;
 
                     if (inside(x, y))
-                        grid[y][x] = '*';
+                        grid[y][x] = Cell.BLOCKED;
                 }
             }
         }
@@ -146,7 +151,7 @@ public class Board
         {
             int x = pos.x + pos.dx * i;
             int y = pos.y + pos.dy * i;
-            grid[y][x] = '@';
+            grid[y][x] = Cell.SHIP;
         }
     }
 
@@ -164,9 +169,9 @@ public class Board
 
         return switch (grid[y][x])
         {
-            case '@' ->
+            case SHIP ->
             {
-                grid[y][x] = 'X';
+                grid[y][x] = Cell.HIT;
 
                 if (!hasAlivePart(x, y))
                 {
@@ -176,9 +181,9 @@ public class Board
 
                 yield AttackResult.HIT;
             }
-            case '·', '*' ->
+            case EMPTY, BLOCKED ->
             {
-                grid[y][x] = 'O';
+                grid[y][x] = Cell.MISS;
                 yield AttackResult.MISS;
             }
             default -> AttackResult.ALREADY_TRIED;
@@ -190,8 +195,8 @@ public class Board
         if (!inside(x, y))
             return false;
 
-        char cell = grid[y][x];
-        return cell != 'X' && cell != 'O';
+        Cell cell = grid[y][x];
+        return cell != Cell.HIT && cell != Cell.MISS;
     }
 
     private void sink(int x, int y)
@@ -203,7 +208,7 @@ public class Board
         for (int dx = -1; dx <= 1; dx += 2)
         {
             int cx = x + dx;
-            while (inside(cx, y) && grid[y][cx] == 'X')
+            while (inside(cx, y) && grid[y][cx] == Cell.HIT)
             {
                 markAround(cx, y);
                 cx += dx;
@@ -214,7 +219,7 @@ public class Board
         for (int dy = -1; dy <= 1; dy += 2)
         {
             int cy = y + dy;
-            while (inside(x, cy) && grid[cy][x] == 'X')
+            while (inside(x, cy) && grid[cy][x] == Cell.HIT)
             {
                 markAround(x, cy);
                 cy += dy;
@@ -233,8 +238,8 @@ public class Board
                 int nx = x + ax;
                 int ny = y + ay;
 
-                if (inside(nx, ny) && grid[ny][nx] == '*')
-                    grid[ny][nx] = 'O';
+                if (inside(nx, ny) && grid[ny][nx] == Cell.BLOCKED)
+                    grid[ny][nx] = Cell.MISS;
             }
     }
 
@@ -245,8 +250,8 @@ public class Board
             int cx = x + dx;
             while (inside(cx, y))
             {
-                if (grid[y][cx] == '@') return true;
-                if (grid[y][cx] != 'X') break;
+                if (grid[y][cx] == Cell.SHIP) return true;
+                if (grid[y][cx] != Cell.HIT) break;
                 cx += dx;
             }
         }
@@ -256,8 +261,8 @@ public class Board
             int cy = y + dy;
             while (inside(x, cy))
             {
-                if (grid[cy][x] == '@') return true;
-                if (grid[cy][x] != 'X') break;
+                if (grid[cy][x] == Cell.SHIP) return true;
+                if (grid[cy][x] != Cell.HIT) break;
                 cy += dy;
             }
         }
@@ -267,11 +272,11 @@ public class Board
 
     public boolean allShipsSunk()
     {
-        for (int i = 0; i < 10; i++)
+        for (int y = 0; y < size; y++)
         {
-            for (int j = 0; j < 10; j++)
+            for (int x = 0; x < size; x++)
             {
-                if (grid[j][i] == '@')
+                if (grid[y][x] == Cell.SHIP)
                     return false;
             }
         }
@@ -283,8 +288,8 @@ public class Board
     {
         Map<Integer, Integer> count = new HashMap<>();
 
-        for (int size : shipsAlive)
-            count.put(size, count.getOrDefault(size, 0) + 1);
+        for (int shipSize : shipsAlive)
+            count.put(shipSize, count.getOrDefault(shipSize, 0) + 1);
 
         return count;
     }
@@ -296,7 +301,7 @@ public class Board
         System.out.print("  ");
 
         for (int i = 0; i < size; i++)
-            System.out.print(i + " ");
+            System.out.print((char)('A' + i) + " ");
 
         System.out.println();
 
@@ -304,7 +309,7 @@ public class Board
         {
             System.out.print(y + " ");
             for (int x = 0; x < size; x++)
-                System.out.print(grid[y][x] + " ");
+                System.out.print(grid[y][x].toChar() + " ");
             System.out.println();
         }
     }
@@ -314,7 +319,7 @@ public class Board
         System.out.print("  ");
 
         for (int i = 0; i < size; i++)
-            System.out.print(i + " ");
+            System.out.print((char)('A' + i) + " ");
 
         System.out.println();
 
@@ -333,8 +338,8 @@ public class Board
     {
         return switch (grid[y][x])
         {
-            case 'X' -> 'X';
-            case 'O' -> 'O';
+            case HIT -> 'X';
+            case MISS -> 'O';
             default -> '·';
         };
     }
