@@ -108,6 +108,8 @@ public class Game
 
             ui.printUserBoard(userBoard);
 
+            ui.showComputerAttackResult(result);
+
             checkVictory();
 
         } while (!gameOver && (result == AttackResult.HIT || result == AttackResult.SUNK));
