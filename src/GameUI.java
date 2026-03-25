@@ -5,7 +5,9 @@ public class GameUI
 {
     private final Scanner scanner = new Scanner(System.in);
 
-    private String difficulty = "EASY";
+    private Difficulty difficulty = Difficulty.EASY;
+
+    /// INPUT
 
     public int startGame()
     {
@@ -16,10 +18,23 @@ public class GameUI
         System.out.println("2 - Difficulty: " + difficulty);
         System.out.println("3 - Exit");
 
-        int input = scanner.nextInt();
-        scanner.nextLine();
+        while (true)
+        {
+            if (scanner.hasNextInt())
+            {
+                int input = scanner.nextInt();
+                scanner.nextLine();
 
-        return input;
+                if (input >= 1 && input <= 3)
+                    return input;
+            }
+            else
+            {
+                scanner.nextLine();
+            }
+
+            showInvalidOption();
+        }
     }
 
     public int getShipPlacement()
@@ -28,48 +43,115 @@ public class GameUI
         System.out.println("1 - Manual");
         System.out.println("2 - Random");
 
-        int choice;
-        do
+        while (true)
         {
-            choice = scanner.nextInt();
-            scanner.nextLine();
-        } while (choice != 1 && choice != 2);
+            if (scanner.hasNextInt())
+            {
+                int choice = scanner.nextInt();
+                scanner.nextLine();
 
-        return choice;
+                if (choice == 1 || choice == 2)
+                    return choice;
+            }
+            else
+            {
+                scanner.nextLine();
+            }
+
+            showInvalidOption();
+        }
     }
 
-    public Ship getShipFromInput(int size)
+    public ShipPosition getShipFromInput(int size)
     {
-        int dx = 0, dy = 0;
-
-        char dir;
-
         System.out.println("\nPlace a ship:");
 
-        do
+        char dir;
+        while (true)
         {
             System.out.print("Direction (H/V): ");
-            dir = scanner.next().toUpperCase().charAt(0);
-            scanner.nextLine();
-        } while (dir != 'H' && dir != 'V');
+            String input = scanner.nextLine().trim().toUpperCase();
 
-        dx = (dir == 'H') ? 1 : 0;
-        dy = (dir == 'V') ? 1 : 0;
+            if (input.length() == 1 && (input.charAt(0) == 'H' || input.charAt(0) == 'V'))
+            {
+                dir = input.charAt(0);
+                break;
+            }
 
-        System.out.print("X: ");
-        int x = scanner.nextInt();
-        scanner.nextLine();
+            showInvalidOption();
+        }
 
-        System.out.print("Y: ");
-        int y = scanner.nextInt();
-        scanner.nextLine();
+        int dx = (dir == 'H') ? 1 : 0;
+        int dy = (dir == 'V') ? 1 : 0;
 
-        return new Ship(x, y, dx, dy);
+        Position pos = readPosition("Starting position:", size);
+
+        return new ShipPosition(pos.x(), pos.y(), dx, dy);
     }
+
+    private Position readPosition(String prompt, int size)
+    {
+        String hint = "Use A0 to " + (char) ('A' + size - 1) + (size - 1);
+
+        while (true)
+        {
+            System.out.println(prompt);
+
+            String input = scanner.nextLine().trim().toUpperCase();
+            Position pos = parsePosition(input, size);
+
+            if (pos != null)
+                return pos;
+
+            System.out.println("Invalid coordinates! " + hint);
+        }
+    }
+
+    private Position parsePosition(String input, int size)
+    {
+        if (input.length() < 2)
+            return null;
+
+        char letter = input.charAt(0);
+        String numberPart = input.substring(1);
+
+        if (!Character.isLetter(letter))
+            return null;
+
+        for (char c : numberPart.toCharArray())
+        {
+            if (!Character.isDigit(c))
+                return null;
+        }
+
+        int x = letter - 'A';
+        int y;
+
+        try
+        {
+            y = Integer.parseInt(numberPart);
+        }
+        catch (NumberFormatException e)
+        {
+            return null;
+        }
+
+        if (x < 0 || x >= size || y < 0 || y >= size)
+            return null;
+
+        return new Position(x, y);
+    }
+
+    public Position getAttackCoordinates(int size)
+    {
+        return readPosition("\nSend your attack:", size);
+    }
+
+    /// OUTPUT
 
     public void printShipsLeft(Board board)
     {
-        Map<Integer, Integer> ships = board.getShipsCountBySize();
+        Map<Integer, Integer> ships = board.getShipCountsBySize();
 
         System.out.print("Ships left: ");
 
@@ -98,80 +180,14 @@ public class GameUI
 
     public void printUserBoard(Board user)
     {
-        System.out.println("\nComputer is playing...");
+        showComputerTurn();
         printShipsLeft(user);
         user.print();
     }
 
-    public int[] getAttackCoordinates(int size)
-    {
-        int x, y;
-
-        while (true)
-        {
-            System.out.println("\nSend your attack:");
-
-            String input = scanner.nextLine().trim().toUpperCase();
-
-            if (input.length() < 2)
-            {
-                System.out.println("Coordinates too short! Use A0 to J9");
-                continue;
-            }
-
-            char letter = input.charAt(0);
-            String number = input.substring(1);
-
-            if (!Character.isLetter(letter))
-            {
-                System.out.println("First coordinate is not a letter! Use A0 to J9");
-                continue;
-            }
-
-            boolean validNumber = true;
-
-            for (char c : number.toCharArray())
-            {
-                if (!Character.isDigit(c))
-                {
-                    validNumber = false;
-                    break;
-                }
-            }
-
-            if (!validNumber)
-            {
-                System.out.println("Second coordinate is not a number! Use A0 to J9");
-                continue;
-            }
-
-            x = letter - 'A';
-
-            try
-            {
-                y = Integer.parseInt(number);
-            }
-            catch (NumberFormatException e)
-            {
-                System.out.println("Number too large! Use A0 to J9");
-                continue;
-            }
-
-            if (x < 0 || x >= size || y < 0 || y >= size)
-            {
-                System.out.println("Out of bounds! Use A0 to J9");
-                continue;
-            }
-
-            break;
-        }
-
-        return new int[]{x, y};
-    }
-
     public void showPlayerAttackResult(int x, int y, AttackResult result)
     {
-        System.out.println("\nYou fired at (" + (char)('A' + x) + ", " + y + ")");
+        System.out.println("\nYou fired at " + (char)('A' + x) + y);
 
         switch (result)
         {
@@ -208,20 +224,7 @@ public class GameUI
             case MISS:
                 System.out.println("Computer MISSED!");
                 break;
-
-            default:
-                break;
         }
-    }
-
-    public void showInvalidAttack()
-    {
-        System.out.println("Invalid attack. Try again.");
-    }
-
-    public void toggleDifficulty()
-    {
-        difficulty = difficulty.equals("EASY") ? "HARD" : "EASY";
     }
 
     public void showGameResult(boolean playerWon)
@@ -230,5 +233,37 @@ public class GameUI
             System.out.println("\nYou Won!\n");
         else
             System.out.println("\nYou Lost!\n");
+    }
+
+    public void showInvalidAttack()
+    {
+        System.out.println("Invalid attack. Try again.");
+    }
+
+    public void showInvalidPosition()
+    {
+        System.out.println("Invalid position. Try again.");
+    }
+
+    public void showComputerTurn()
+    {
+        System.out.println("\nComputer is playing...");
+    }
+
+    public void showInvalidOption()
+    {
+        System.out.println("Invalid option. Try again.");
+    }
+
+    /// HELPER
+
+    public void toggleDifficulty()
+    {
+        difficulty = (difficulty == Difficulty.EASY) ? Difficulty.HARD : Difficulty.EASY;
+    }
+
+    public Difficulty getDifficulty()
+    {
+        return difficulty;
     }
 }

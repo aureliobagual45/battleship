@@ -2,7 +2,7 @@ import java.util.*;
 
 public class Board
 {
-    private List<Integer> shipsAlive;
+    private final List<Integer> shipsAlive;
     private final int size;
     private final Cell[][] grid;
     private static final int MAX_TRIES = 50;
@@ -12,10 +12,7 @@ public class Board
     {
         this.size = size;
         this.grid = new Cell[size][size];
-        shipsAlive = new ArrayList<>();
-
-        for (int s : SHIPS)
-            shipsAlive.add(s);
+        this.shipsAlive = new ArrayList<>();
 
         clear();
     }
@@ -27,6 +24,11 @@ public class Board
 
     public void clear()
     {
+        shipsAlive.clear();
+
+        for (int s : SHIPS)
+            shipsAlive.add(s);
+
         for (int y = 0; y < size; y++)
             for (int x = 0; x < size; x++)
                 grid[y][x] = Cell.EMPTY;
@@ -34,13 +36,13 @@ public class Board
 
     /// PLACEMENT
 
-    public void placeShipsManually(GameUI gameUI)
+    public void placeShipsManually(GameUI ui)
     {
         for (int shipSize : SHIPS)
         {
             while (true)
             {
-                Ship pos = gameUI.getShipFromInput(shipSize);
+                ShipPosition pos = ui.getShipFromInput(this.size);
 
                 if (canPlace(shipSize, pos))
                 {
@@ -48,7 +50,7 @@ public class Board
                     print();
                     break;
                 }
-                System.out.println("Invalid position, try again.");
+                ui.showInvalidPosition();
             }
         }
     }
@@ -71,7 +73,7 @@ public class Board
 
             for (int tries = 0; tries < MAX_TRIES; tries++)
             {
-                Ship pos = randomShip(random, shipSize);
+                ShipPosition pos = randomShip(random, shipSize);
 
                 if (canPlace(shipSize, pos))
                 {
@@ -90,7 +92,7 @@ public class Board
 
     /// LOGIC
 
-    private Ship randomShip(Random r, int size)
+    private ShipPosition randomShip(Random r, int size)
     {
         int x = r.nextInt(this.size);
         int y = r.nextInt(this.size);
@@ -110,29 +112,29 @@ public class Board
             }
         }
 
-        return new Ship(x, y, dx, dy);
+        return new ShipPosition(x, y, dx, dy);
     }
 
-    private boolean canPlace(int size, Ship pos)
+    private boolean canPlace(int size, ShipPosition pos)
     {
         for (int i = 0; i < size; i++)
         {
-            int x = pos.x + pos.dx * i;
-            int y = pos.y + pos.dy * i;
+            int x = pos.x() + pos.dx() * i;
+            int y = pos.y() + pos.dy() * i;
 
-            if (!inside(x, y)) return false;
+            if (!isInside(x, y)) return false;
 
             if (grid[y][x] != Cell.EMPTY) return false;
         }
         return true;
     }
 
-    private void place(int size, Ship pos)
+    private void place(int size, ShipPosition pos)
     {
         for (int i = 0; i < size; i++)
         {
-            int cx = pos.x + pos.dx * i;
-            int cy = pos.y + pos.dy * i;
+            int cx = pos.x() + pos.dx() * i;
+            int cy = pos.y() + pos.dy() * i;
 
             for (int ay = -1; ay <= 1; ay++)
             {
@@ -141,7 +143,7 @@ public class Board
                     int x = cx + ax;
                     int y = cy + ay;
 
-                    if (inside(x, y))
+                    if (isInside(x, y))
                         grid[y][x] = Cell.BLOCKED;
                 }
             }
@@ -149,13 +151,13 @@ public class Board
 
         for (int i = 0; i < size; i++)
         {
-            int x = pos.x + pos.dx * i;
-            int y = pos.y + pos.dy * i;
+            int x = pos.x() + pos.dx() * i;
+            int y = pos.y() + pos.dy() * i;
             grid[y][x] = Cell.SHIP;
         }
     }
 
-    private boolean inside(int x, int y)
+    public boolean isInside(int x, int y)
     {
         return x >= 0 && x < size && y >= 0 && y < size;
     }
@@ -164,7 +166,7 @@ public class Board
 
     public AttackResult attack(int x, int y)
     {
-        if (!inside(x, y))
+        if (!isInside(x, y))
             return AttackResult.ALREADY_TRIED;
 
         return switch (grid[y][x])
@@ -192,7 +194,7 @@ public class Board
 
     public boolean isValidAttack(int x, int y)
     {
-        if (!inside(x, y))
+        if (!isInside(x, y))
             return false;
 
         Cell cell = grid[y][x];
@@ -208,7 +210,7 @@ public class Board
         for (int dx = -1; dx <= 1; dx += 2)
         {
             int cx = x + dx;
-            while (inside(cx, y) && grid[y][cx] == Cell.HIT)
+            while (isInside(cx, y) && grid[y][cx] == Cell.HIT)
             {
                 markAround(cx, y);
                 cx += dx;
@@ -219,7 +221,7 @@ public class Board
         for (int dy = -1; dy <= 1; dy += 2)
         {
             int cy = y + dy;
-            while (inside(x, cy) && grid[cy][x] == Cell.HIT)
+            while (isInside(x, cy) && grid[cy][x] == Cell.HIT)
             {
                 markAround(x, cy);
                 cy += dy;
@@ -238,7 +240,7 @@ public class Board
                 int nx = x + ax;
                 int ny = y + ay;
 
-                if (inside(nx, ny) && grid[ny][nx] == Cell.BLOCKED)
+                if (isInside(nx, ny) && grid[ny][nx] == Cell.BLOCKED)
                     grid[ny][nx] = Cell.MISS;
             }
     }
@@ -248,7 +250,7 @@ public class Board
         for (int dx = -1; dx <= 1; dx += 2)
         {
             int cx = x + dx;
-            while (inside(cx, y))
+            while (isInside(cx, y))
             {
                 if (grid[y][cx] == Cell.SHIP) return true;
                 if (grid[y][cx] != Cell.HIT) break;
@@ -259,7 +261,7 @@ public class Board
         for (int dy = -1; dy <= 1; dy += 2)
         {
             int cy = y + dy;
-            while (inside(x, cy))
+            while (isInside(x, cy))
             {
                 if (grid[cy][x] == Cell.SHIP) return true;
                 if (grid[cy][x] != Cell.HIT) break;
@@ -272,26 +274,7 @@ public class Board
 
     public boolean allShipsSunk()
     {
-        for (int y = 0; y < size; y++)
-        {
-            for (int x = 0; x < size; x++)
-            {
-                if (grid[y][x] == Cell.SHIP)
-                    return false;
-            }
-        }
-
-        return true;
-    }
-
-    public Map<Integer, Integer> getShipsCountBySize()
-    {
-        Map<Integer, Integer> count = new HashMap<>();
-
-        for (int shipSize : shipsAlive)
-            count.put(shipSize, count.getOrDefault(shipSize, 0) + 1);
-
-        return count;
+        return shipsAlive.isEmpty();
     }
 
     /// PRINT
@@ -342,5 +325,30 @@ public class Board
             case MISS -> 'O';
             default -> '·';
         };
+    }
+
+    /// HELPER
+
+    public Map<Integer, Integer> getShipCountsBySize()
+    {
+        Map<Integer, Integer> count = new HashMap<>();
+
+        for (int shipSize : shipsAlive)
+            count.put(shipSize, count.getOrDefault(shipSize, 0) + 1);
+
+        return count;
+    }
+
+    public Cell getCell(int x, int y)
+    {
+        return grid[y][x];
+    }
+
+    /// PROBABILITY AI
+
+    public boolean blocksPlacement(int x, int y)
+    {
+        Cell cell = grid[y][x];
+        return cell == Cell.MISS || cell == Cell.HIT;
     }
 }

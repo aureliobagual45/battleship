@@ -1,9 +1,8 @@
 public class Main
 {
-    static boolean running = true;
-
     public static void main(String[] args)
     {
+        boolean running = true;
         GameUI ui = new GameUI();
         Game game = new Game();
 
@@ -16,6 +15,7 @@ public class Main
                 case 1 -> game.run(ui);
                 case 2 -> ui.toggleDifficulty();
                 case 3 -> running = false;
+                default -> ui.showInvalidOption();
             }
         }
     }

@@ -1,29 +1,26 @@
-import java.util.Random;
-
 public class Game
 {
     private Board userBoard;
     private Board computerBoard;
-    private final ComputerAI computerAI = new ComputerAI();
+    private ComputerAI computerAI;
 
     private boolean playerTurn;
     private boolean gameOver;
     private boolean playerWon;
 
-    public void setup(Board user, Board computer)
-    {
-        this.userBoard = user;
-        this.computerBoard = computer;
+    private static final int BOARD_SIZE = 10;
 
+    public void resetState()
+    {
         playerTurn = true;
         gameOver = false;
         playerWon = false;
     }
 
-    private void setupBoards(GameUI ui)
+    private void initializeBoards(GameUI ui)
     {
-        userBoard = new Board(10);
-        computerBoard = new Board(10);
+        userBoard = new Board(BOARD_SIZE);
+        computerBoard = new Board(BOARD_SIZE);
 
         int choice = ui.getShipPlacement();
 
@@ -37,9 +34,15 @@ public class Game
 
     public void run(GameUI ui)
     {
-        setupBoards(ui);
+        initializeBoards(ui);
 
-        setup(userBoard, computerBoard);
+        switch (ui.getDifficulty())
+        {
+            case EASY -> computerAI = new EasyAI();
+            case HARD -> computerAI = new HardAI();
+        }
+
+        resetState();
 
         while (!gameOver)
         {
@@ -77,9 +80,9 @@ public class Game
 
         do
         {
-            int[] pos = ui.getAttackCoordinates(computerBoard.getSize());
-            x = pos[0];
-            y = pos[1];
+            Position pos = ui.getAttackCoordinates(computerBoard.getSize());
+            x = pos.x();
+            y = pos.y();
 
             valid = computerBoard.isValidAttack(x, y);
 
@@ -114,6 +117,7 @@ public class Game
 
         } while (!gameOver && (result == AttackResult.HIT || result == AttackResult.SUNK));
 
-        playerTurn = true;
+        if (!gameOver)
+            playerTurn = true;
     }
 }
