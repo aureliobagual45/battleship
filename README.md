@@ -1,9 +1,5 @@
 BATTLESHIP
 
-This is a console-based implementation of the classic Battleship game.
-
-The game allows the player to play against a computer with different difficulty levels and includes both manual and random ship placement.
-
 FEATURES
 
 Player vs Computer gameplay
