@@ -1,3 +1,9 @@
+# BATTLESHIP
+
+This is a console-based implementation of the classic Battleship game.
+
+The game allows the player to play against a computer with different difficulty levels and includes both manual and random ship placement.
+
 # FEATURES
 
 - Player vs Computer gameplay
@@ -15,7 +21,7 @@ The game includes two types of AI:
 - Easy AI: random attacks
 - Hard AI: uses a probability-based heatmap to choose better positions
 
-The AI also switches to a "target mode" after hitting a ship, trying to follow its direction until it is sunk
+The AI also switches to a "target mode" after hitting a ship, trying to follow its direction until it is sunk.
 
 # GAME LOGIC
 
